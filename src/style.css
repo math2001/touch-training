@@ -28,6 +28,7 @@ body {
   font-size: inherit;
   font-family: inherit;
   padding: 4px 8px;
+  margin: 0 12px;
 }
 
 .field {

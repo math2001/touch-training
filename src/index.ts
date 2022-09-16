@@ -1,5 +1,39 @@
 import "./style.css";
 
+window.addEventListener("online",  () => {
+  alert("called")
+  if (!navigator.serviceWorker.controller)
+    return;
+  
+  // @ts-ignore
+  if (navigator.connection && navigator.connection.saveData) 
+  {
+    navigator.serviceWorker.controller.postMessage({ 
+      type: `FETCH_FROM_CACHE_FIRST`
+    });
+  }
+
+  navigator.serviceWorker.controller.postMessage({ 
+    type: `FETCH_FROM_NETWORK_FIRST`
+  });
+ 
+});
+window.addEventListener("offline", function(){
+  if (!navigator.serviceWorker.controller)
+    return;
+
+  navigator.serviceWorker.controller.postMessage({ 
+    type: `FETCH_FROM_CACHE_FIRST`
+  });
+});
+
+navigator.serviceWorker.register('/sw/sw.js').then(reg => {
+  console.log("sw registered")
+}).catch(e => {
+  console.error("sw failed", e)
+})
+
+
 let playerSize: number = 0;
 let fieldRect: DOMRect;
 
@@ -72,6 +106,8 @@ function main() {
   }
 
   field.addEventListener("mousemove", e => {
+    if (!(mouseIdentifier in dragging))
+      return;
     const left = e.pageX - dragging[mouseIdentifier].offsetx - fieldRect.left + "px";
     const top = e.pageY - dragging[mouseIdentifier].offsety - fieldRect.top + "px";
     dragging[mouseIdentifier].div.style.left = left;
@@ -79,7 +115,7 @@ function main() {
   });
 
   field.addEventListener("touchmove", e => {
-      const rect = field.getBoundingClientRect()
+    const rect = field.getBoundingClientRect()
     for (let i = 0; i < e.changedTouches.length; ++i)
     {
       const touch = e.changedTouches[i]

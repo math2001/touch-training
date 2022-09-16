@@ -5,9 +5,13 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
 module.exports = {
   mode: prod ? "production" : "development",
-  entry: "./src/index.ts",
+  entry: {
+    app: "./src/index.ts",
+    sw: {import: "./src/sw/sw.js", filename: "sw/sw.js", "runtime": "f off"}
+  },
   output: {
     path: __dirname + "/dist/",
+    clean: true,
   },
   module: {
     rules: [
@@ -23,6 +27,10 @@ module.exports = {
         test: /\.css$/,
         use: [MiniCssExtractPlugin.loader, "css-loader"],
       },
+      {
+        test: /sw\.js/,
+        type: 'asset/resource',
+      }
     ],
   },
   devtool: prod ? undefined : "source-map",
