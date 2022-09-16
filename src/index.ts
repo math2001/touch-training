@@ -1,5 +1,8 @@
 import "./style.css";
 
+let playerSize: number = 0;
+let fieldRect: DOMRect;
+
 function setInitialPosition(players: HTMLElement[], playerSize: number)
 {
   for (let i = 0; i < players.length; i++) {
@@ -29,8 +32,8 @@ function main() {
   }
 
   document.body.appendChild(field);
-  const fieldRect = field.getBoundingClientRect()
-  const playerSize = Math.round(Math.min(fieldRect.width * 10/100, fieldRect.height * 10/100));
+  fieldRect = field.getBoundingClientRect()
+  playerSize = Math.round(Math.min(fieldRect.width * 10/100, fieldRect.height * 10/100));
 
   for (let player of players) {
     player.style.width = playerSize + "px";
@@ -41,32 +44,88 @@ function main() {
   setInitialPosition(players, playerSize);
   // handle dragging
 
-  let dragging: {div: HTMLElement, offsetx: number, offsety: number} | null = null;
+
+  const mouseIdentifier = -1;
+  const dragging: {[key: number]: {div: HTMLElement, offsetx: number, offsety: number}} = {}
   for (let player of players)
   {
     player.addEventListener("mousedown", e => {
+      fieldRect = field.getBoundingClientRect()
       e.preventDefault()
-      if (!dragging)
-        dragging = {div: player, offsetx: e.offsetX, offsety: e.offsetY};
+      dragging[mouseIdentifier] = {div: player, offsetx: e.offsetX, offsety: e.offsetY};
+    })
+
+    player.addEventListener("touchstart", e => {
+      fieldRect = field.getBoundingClientRect()
+      e.preventDefault()
+      const rect = player.getBoundingClientRect()
+      for (let i = 0; i < e.changedTouches.length; ++i)
+      {
+        const id = e.changedTouches[i].identifier
+        if (dragging[id])
+          continue;
+        const offsetx = e.changedTouches[i].pageX - rect.left;
+        const offsety = e.changedTouches[i].pageY - rect.top;
+        dragging[id] = {div: player, offsetx, offsety}
+      } 
     })
   }
 
   field.addEventListener("mousemove", e => {
-    if (!dragging)
-      return;
-    const rect = field.getBoundingClientRect()
-    const left = e.pageX - dragging.offsetx - rect.left + "px";
-    const top = e.pageY - dragging.offsety - rect.top + "px";
-    dragging.div.style.left = left;
-    dragging.div.style.top = top;
+    const left = e.pageX - dragging[mouseIdentifier].offsetx - fieldRect.left + "px";
+    const top = e.pageY - dragging[mouseIdentifier].offsety - fieldRect.top + "px";
+    dragging[mouseIdentifier].div.style.left = left;
+    dragging[mouseIdentifier].div.style.top = top;
+  });
+
+  field.addEventListener("touchmove", e => {
+      const rect = field.getBoundingClientRect()
+    for (let i = 0; i < e.changedTouches.length; ++i)
+    {
+      const touch = e.changedTouches[i]
+      const id = touch.identifier
+      const x = touch.pageX - dragging[id].offsetx - rect.left;
+      const y = touch.pageY - dragging[id].offsety - rect.top;
+      dragging[id].div.style.left = x / fieldRect.width * 100 + "%";
+      dragging[id].div.style.top = y / fieldRect.height * 100 + "%";
+    }
   });
 
   field.addEventListener("mouseup", e => {
-    dragging = null;
+    if (mouseIdentifier in dragging)
+      delete(dragging[mouseIdentifier])
   })
 
-  document.querySelector("#toolbar-btn-reset")?.addEventListener("click", e => {
+  field.addEventListener("touchend", e => {
+    for (let i = 0; i < e.changedTouches.length; ++i)
+    {
+      delete(dragging[e.changedTouches[i].identifier])
+    }
+  })
+
+  document.querySelector("#toolbar-btn-reset")!.addEventListener("click", e => {
     setInitialPosition(players, playerSize);
+  })
+  
+  document.querySelector("#toolbar-btn-fullscreen")!.addEventListener("click", e => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen()
+    }
+    else {
+      document.body.requestFullscreen({
+        // "navigationUI": "hide",
+      }).then(() => screen.orientation.lock("landscape-primary"))
+    }
+  })
+
+  screen.orientation.addEventListener("change", e => {
+    fieldRect = field.getBoundingClientRect()
+    playerSize = Math.round(Math.min(fieldRect.width * 10/100, fieldRect.height * 10/100));
+    for (let player of players)
+    {
+      player.style.width = playerSize + "px"
+      player.style.height = playerSize + "px"
+    }
   })
   
 }

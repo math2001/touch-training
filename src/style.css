@@ -9,6 +9,7 @@ body {
   display: flex;
   flex-direction: column;
   font-family: monospace;
+  background-color: white;
 }
 
 .toolbar {
@@ -44,4 +45,9 @@ body {
 
 .player.attack {
   background-color: rgb(218, 49, 49);
+}
+
+::backdrop
+{
+    background-color: white;
 }
