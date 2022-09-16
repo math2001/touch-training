@@ -48,7 +48,6 @@ body {
   background-color: rgb(218, 49, 49);
 }
 
-::backdrop
-{
-    background-color: white;
+::backdrop {
+  background-color: white;
 }

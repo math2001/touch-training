@@ -1,19 +1,12 @@
 {
-    "compilerOptions": {
+  "compilerOptions": {
     //   "esModuleInterop": true,
-      "module": "esnext",
-      "moduleResolution": "node",
-      "lib": [
-        "dom",
-        "esnext"
-      ],
-      "strict": true,
-      "sourceMap": true,
-      "target": "esnext",
-    },
-    "exclude": [
-      "node_modules",
-      "src/sw/sw.js",
-    ],
-  }
-  
+    "module": "esnext",
+    "moduleResolution": "node",
+    "lib": ["dom", "esnext"],
+    "strict": true,
+    "sourceMap": true,
+    "target": "esnext"
+  },
+  "exclude": ["node_modules", "src/sw/sw.js"]
+}

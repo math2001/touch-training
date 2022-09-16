@@ -7,7 +7,7 @@ module.exports = {
   mode: prod ? "production" : "development",
   entry: {
     app: "./src/index.ts",
-    sw: {import: "./src/sw/sw.js", filename: "sw/sw.js", "runtime": "f off"}
+    sw: { import: "./src/sw/sw.js", filename: "sw/sw.js", runtime: "f off" },
   },
   output: {
     path: __dirname + "/dist/",
@@ -29,8 +29,8 @@ module.exports = {
       },
       {
         test: /sw\.js/,
-        type: 'asset/resource',
-      }
+        type: "asset/resource",
+      },
     ],
   },
   devtool: prod ? undefined : "source-map",
