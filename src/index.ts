@@ -1,5 +1,6 @@
 import "./style.css";
 
+
 window.addEventListener("online", () => {
   if (!navigator.serviceWorker.controller) return;
 
@@ -22,14 +23,17 @@ window.addEventListener("offline", function () {
   });
 });
 
-navigator.serviceWorker
-  .register("/sw/sw.js")
-  .then((reg) => {
-    console.log("sw registered");
-  })
-  .catch((e) => {
-    console.error("sw failed", e);
-  });
+if ('serviceWOrkerin' in navigator)
+  navigator.serviceWorker
+    .register("/sw/sw.js")
+    .then((reg) => {
+      console.log("sw registered");
+    })
+    .catch((e) => {
+      console.error("sw failed", e);
+    });
+else
+  alert('no service worker')
 
 let playerSize: number = 0;
 let fieldRect: DOMRect;
@@ -51,12 +55,44 @@ function setInitialPosition(players: HTMLElement[], playerSize: number) {
 }
 
 const undoStack: {
-  playerIdx: number;
+  player: HTMLElement;
   moveFromX: number;
   moveFromY: number;
   moveToX: number;
   moveToY: number;
 }[] = [];
+let undoStackHead = 0;
+
+function recordAction(
+  player: HTMLElement,
+  moveFromX: number,
+  moveFromY: number,
+  moveToX: number,
+  moveToY: number
+) {
+  undoStack[undoStackHead++] = {
+    player,
+    moveFromX,
+    moveToY,
+    moveToX,
+    moveFromY,
+  };
+  undoStack.length = undoStackHead;
+}
+
+function undo() {
+  if (undoStackHead <= 0) return;
+  const frame = undoStack[--undoStackHead];
+  frame.player.style.left = frame.moveFromX * 100 + "%";
+  frame.player.style.top = frame.moveFromY * 100 + "%";
+}
+
+function redo() {
+  if (undoStackHead >= undoStack.length) return;
+  const frame = undoStack[undoStackHead++];
+  frame.player.style.left = frame.moveToX * 100 + "%";
+  frame.player.style.top = frame.moveToY * 100 + "%";
+}
 
 function main() {
   const field = document.createElement("div");
@@ -87,8 +123,15 @@ function main() {
 
   const mouseIdentifier = -1;
   const dragging: {
-    [key: number]: { div: HTMLElement; offsetx: number; offsety: number };
+    [key: number]: {
+      div: HTMLElement;
+      offsetx: number;
+      offsety: number;
+      originX: number;
+      originY: number;
+    };
   } = {};
+
   for (let player of players) {
     player.addEventListener("mousedown", (e) => {
       fieldRect = field.getBoundingClientRect();
@@ -97,6 +140,8 @@ function main() {
         div: player,
         offsetx: e.offsetX,
         offsety: e.offsetY,
+        originX: player.offsetLeft / fieldRect.width,
+        originY: player.offsetTop / fieldRect.height,
       };
     });
 
@@ -105,11 +150,17 @@ function main() {
       e.preventDefault();
       const rect = player.getBoundingClientRect();
       for (let i = 0; i < e.changedTouches.length; ++i) {
-        const id = e.changedTouches[i].identifier;
-        if (dragging[id]) continue;
-        const offsetx = e.changedTouches[i].pageX - rect.left;
-        const offsety = e.changedTouches[i].pageY - rect.top;
-        dragging[id] = { div: player, offsetx, offsety };
+        const touch = e.changedTouches[i];
+        if (dragging[touch.identifier]) continue;
+        const offsetx = touch.pageX - rect.left;
+        const offsety = touch.pageY - rect.top;
+        dragging[touch.identifier] = {
+          div: player,
+          offsetx,
+          offsety,
+          originX: player.offsetLeft / fieldRect.width,
+          originY: player.offsetTop / fieldRect.height,
+        };
       }
     });
   }
@@ -137,11 +188,29 @@ function main() {
   });
 
   field.addEventListener("mouseup", (e) => {
-    if (mouseIdentifier in dragging) delete dragging[mouseIdentifier];
+    if (mouseIdentifier in dragging) {
+      const d = dragging[mouseIdentifier];
+      recordAction(
+        d.div,
+        d.originX,
+        d.originY,
+        d.div.offsetLeft / fieldRect.width,
+        d.div.offsetTop / fieldRect.height
+      );
+      delete dragging[mouseIdentifier];
+    }
   });
 
   field.addEventListener("touchend", (e) => {
     for (let i = 0; i < e.changedTouches.length; ++i) {
+      const d = dragging[e.changedTouches[i].identifier];
+      recordAction(
+        d.div,
+        d.originX,
+        d.originY,
+        d.div.offsetLeft / fieldRect.width,
+        d.div.offsetTop / fieldRect.height
+      );
       delete dragging[e.changedTouches[i].identifier];
     }
   });
@@ -150,6 +219,8 @@ function main() {
     .querySelector("#toolbar-btn-reset")!
     .addEventListener("click", (e) => {
       setInitialPosition(players, playerSize);
+      undoStack.length = 0;
+      undoStackHead = 0;
     });
 
   document
@@ -160,11 +231,37 @@ function main() {
       } else {
         document.body
           .requestFullscreen({
-            // "navigationUI": "hide",
+            navigationUI: "hide",
           })
           .then(() => screen.orientation.lock("landscape-primary"));
       }
     });
+
+  document
+    .querySelector("#toolbar-btn-undo")!
+    .addEventListener("click", (e) => {
+      e.preventDefault();
+      undo();
+    });
+
+  document
+    .querySelector("#toolbar-btn-redo")!
+    .addEventListener("click", (e) => {
+      e.preventDefault();
+      redo();
+    });
+
+  document.body.addEventListener("keydown", (e) => {
+    if (e.key == "z" && e.ctrlKey && !e.altKey && !e.metaKey && !e.shiftKey) {
+      e.preventDefault();
+      console.log("undo");
+      undo();
+    }
+    if (e.key == "y" && e.ctrlKey && !e.altKey && !e.metaKey && !e.shiftKey) {
+      e.preventDefault();
+      redo();
+    }
+  });
 
   screen.orientation.addEventListener("change", (e) => {
     fieldRect = field.getBoundingClientRect();
