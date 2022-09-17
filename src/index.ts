@@ -23,7 +23,7 @@ window.addEventListener("offline", function () {
   });
 });
 
-if ('serviceWOrkerin' in navigator)
+if ('serviceWorker' in navigator)
   navigator.serviceWorker
     .register("/sw/sw.js")
     .then((reg) => {
@@ -32,8 +32,6 @@ if ('serviceWOrkerin' in navigator)
     .catch((e) => {
       console.error("sw failed", e);
     });
-else
-  alert('no service worker')
 
 let playerSize: number = 0;
 let fieldRect: DOMRect;
@@ -117,9 +115,7 @@ function main() {
     player.style.height = playerSize + "px";
   }
 
-  // set initial positions
   setInitialPosition(players, playerSize);
-  // handle dragging
 
   const mouseIdentifier = -1;
   const dragging: {
@@ -241,6 +237,7 @@ function main() {
     .querySelector("#toolbar-btn-undo")!
     .addEventListener("click", (e) => {
       e.preventDefault();
+      fieldRect = field.getBoundingClientRect();
       undo();
     });
 
@@ -248,13 +245,13 @@ function main() {
     .querySelector("#toolbar-btn-redo")!
     .addEventListener("click", (e) => {
       e.preventDefault();
+      fieldRect = field.getBoundingClientRect();
       redo();
     });
 
   document.body.addEventListener("keydown", (e) => {
     if (e.key == "z" && e.ctrlKey && !e.altKey && !e.metaKey && !e.shiftKey) {
       e.preventDefault();
-      console.log("undo");
       undo();
     }
     if (e.key == "y" && e.ctrlKey && !e.altKey && !e.metaKey && !e.shiftKey) {
