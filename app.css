@@ -1,0 +1,55 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: monospace;
+  background-color: white;
+}
+
+.toolbar {
+  padding: 0 0px;
+  text-align: center;
+  display: flex;
+  justify-content: right;
+  gap: 2px;
+  border-bottom: 2px solid rgb(191, 202, 228);
+}
+
+.toolbar button {
+  background: none;
+  border: none;
+  border-radius: 2px;
+  font-size: inherit;
+  font-family: inherit;
+  padding: 4px 8px;
+  margin: 0 12px;
+}
+
+.field {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.player {
+  border-radius: 100%;
+  background-color: rgb(91, 131, 219);
+  display: block;
+  position: absolute;
+}
+
+.player.attack {
+  background-color: rgb(218, 49, 49);
+}
+
+::backdrop {
+  background-color: white;
+}
+
